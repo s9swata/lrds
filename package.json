@@ -2,7 +2,18 @@
   "name": "@lrds/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev": "nx run-many -t serve -p web api",
+    "dev:web": "nx serve web",
+    "dev:api": "nx serve api",
+    "build": "nx run-many -t build -p web api",
+    "build:web": "nx build web",
+    "build:api": "nx build api",
+    "test": "nx run-many -t test -p web api",
+    "lint": "nx run-many -t lint -p web api",
+    "db:push": "nx run api:db:push",
+    "db:drop": "nx run api:db:drop"
+  },
   "private": true,
   "devDependencies": {
     "@nx/js": "23.2.0",
@@ -33,8 +44,11 @@
     "vitest": "~4.1.0"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-router": "^1.170.32",
+    "lucide-react": "^1.40.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.3"
   }
 }
