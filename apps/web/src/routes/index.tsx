@@ -12,6 +12,9 @@ import { fetchDocuments, LandDocument } from '../lib/api';
 import { DocumentUploadZone } from '../components/DocumentUploadZone';
 import { DocumentList } from '../components/DocumentList';
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Card, CardContent } from '../components/ui/card';
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -26,7 +29,6 @@ function Index() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [showUploadSection, setShowUploadSection] = useState(true);
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true);
@@ -65,93 +67,101 @@ function Index() {
   const pendingCount = documents.filter((d) => d.status === 'PENDING').length;
 
   return (
-    <div className="min-h-screen bg-slate-100/60 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Vercel-style Top Navigation Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
-              <Layers className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center font-bold text-xs tracking-wider shadow-xs">
+              <Layers className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base text-slate-900 dark:text-white tracking-tight">
+                <span className="font-semibold text-sm tracking-tight text-foreground">
                   LRDS
                 </span>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                  Digitization Portal
+                <span className="text-muted-foreground text-xs">/</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Land Record Digitization
                 </span>
+                <Badge variant="vercel" className="text-[10px] py-0 px-2 font-mono">
+                  v0.1.0
+                </Badge>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Land Records Digitization & Verification System
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowUploadSection((prev) => !prev)}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {showUploadSection ? 'Hide Uploader' : 'New Upload'}
-            </button>
-          </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Metric Cards Banner */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Land Records</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{totalCount}</h3>
-            </div>
-          </div>
+          <Card className="border border-border/80 shadow-2xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
+                  Total Land Records
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                  {totalCount}
+                </h3>
+              </div>
+              <div className="p-2.5 rounded-lg bg-muted text-foreground">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
-              <FileCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Digitized & Verified</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{digitizedCount}</h3>
-            </div>
-          </div>
+          <Card className="border border-border/80 shadow-2xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
+                  Digitized & Verified
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                  {digitizedCount}
+                </h3>
+              </div>
+              <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <FileCheck className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Pending Verification</p>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">{pendingCount}</h3>
-            </div>
-          </div>
+          <Card className="border border-border/80 shadow-2xs">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">
+                  Pending Verification
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                  {pendingCount}
+                </h3>
+              </div>
+              <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Clock className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Upload Section */}
-        {showUploadSection && (
-          <section className="animate-in fade-in duration-200">
-            <DocumentUploadZone onUploadSuccess={handleUploadSuccess} />
-          </section>
-        )}
+        <section className="animate-in fade-in duration-150">
+          <DocumentUploadZone onUploadSuccess={handleUploadSuccess} />
+        </section>
 
-        {/* Document Repository Section */}
+        {/* Repository Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                Land Records Repository
+              <h2 className="text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-foreground" />
+                Land Records Repository & Verification
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Search, inspect, and manage uploaded deeds, maps, and land certificates.
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Search, inspect, and run OCR & field extraction on uploaded deed scans and certificates.
               </p>
             </div>
           </div>
@@ -172,7 +182,7 @@ function Index() {
         </section>
       </main>
 
-      {/* Document Preview Modal */}
+      {/* Document Preview & Extraction Modal */}
       <DocumentPreviewModal
         document={previewDoc}
         onClose={() => setPreviewDoc(null)}

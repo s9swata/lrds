@@ -9,8 +9,20 @@ import {
   FolderOpen,
   Sparkles,
   CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Loader2,
+  Calendar,
+  MapPin,
+  Tag,
+  ShieldCheck,
 } from 'lucide-react';
 import { LandDocument, deleteDocument, getDocumentFileUrl, processDocument } from '../lib/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+import { Card, CardContent } from './ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const DOCUMENT_TYPES = [
   { value: 'ALL', label: 'All Record Types' },
@@ -81,254 +93,269 @@ export function DocumentList({
     setProcessingId(doc.id);
     try {
       await processDocument(doc.id);
-      setTimeout(() => {
-        onRefresh();
-      }, 1500);
+      onRefresh();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to process document');
+      alert(err instanceof Error ? err.message : 'Failed to run OCR & field extraction pipeline');
     } finally {
       setProcessingId(null);
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'DIGITIZED':
+        return (
+          <Badge variant="success" className="gap-1 font-mono text-[11px]">
+            <CheckCircle2 className="w-3 h-3" />
+            DIGITIZED
+          </Badge>
+        );
+      case 'PROCESSING':
+        return (
+          <Badge variant="info" className="gap-1 font-mono text-[11px] animate-pulse">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            PROCESSING
+          </Badge>
+        );
+      case 'FAILED':
+        return (
+          <Badge variant="destructive" className="gap-1 font-mono text-[11px]">
+            <AlertTriangle className="w-3 h-3" />
+            FAILED
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="gap-1 font-mono text-[11px]">
+            <Clock className="w-3 h-3" />
+            PENDING
+          </Badge>
+        );
+    }
+  };
+
+  const formatDocType = (type: string) => {
+    return type.replace(/_/g, ' ').toUpperCase();
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
-      {/* Search and Filters Header */}
-      <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-50/50 dark:bg-slate-850/50">
+    <div className="space-y-4">
+      {/* Search and Filters Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-card border border-border/80 rounded-xl shadow-2xs">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-          <input
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
             type="text"
-            placeholder="Search by title, parcel ID, text, or district..."
+            placeholder="Search by title, parcel ID, district, or filename..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+            className="pl-9 h-9 text-xs"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Document Type Filter */}
-          <div className="relative">
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="text-xs font-medium py-2 px-3 pr-8 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-            >
+        <div className="flex items-center gap-2">
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-[160px] h-9 text-xs">
+              <SelectValue placeholder="Record Type" />
+            </SelectTrigger>
+            <SelectContent>
               {DOCUMENT_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
+                <SelectItem key={t.value} value={t.value} className="text-xs">
                   {t.label}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
+            </SelectContent>
+          </Select>
 
-          {/* Status Filter */}
-          <div className="relative">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="text-xs font-medium py-2 px-3 pr-8 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-            >
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[150px] h-9 text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
               {STATUS_FILTERS.map((s) => (
-                <option key={s.value} value={s.value}>
+                <SelectItem key={s.value} value={s.value} className="text-xs">
                   {s.label}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
+            </SelectContent>
+          </Select>
 
-          {/* Refresh Button */}
-          <button
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
             onClick={onRefresh}
-            disabled={isLoading}
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition"
             title="Refresh repository"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
-      {/* Documents Table / Empty State */}
+      {/* Document Grid / Table View */}
       {isLoading && documents.length === 0 ? (
-        <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-600 mb-3" />
-          <p className="text-sm font-medium">Loading land records repository...</p>
+        <div className="py-16 text-center bg-card border border-border/60 rounded-xl">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground">Loading land records...</p>
+          <p className="text-xs text-muted-foreground">Connecting to state digitization catalog</p>
         </div>
       ) : documents.length === 0 ? (
-        <div className="p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+        <div className="py-16 text-center bg-card border border-border/60 rounded-xl space-y-2">
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
             <FolderOpen className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            No land records found
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+          <h3 className="text-sm font-semibold text-foreground">No land records found</h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {searchTerm || selectedType !== 'ALL' || selectedStatus !== 'ALL'
-              ? 'Try adjusting your search criteria or clear filters.'
-              : 'Upload your first land document above to begin digitizing records.'}
+              ? 'Try changing your search keywords or filter criteria.'
+              : 'Upload scanned land documents above to run multilingual OCR and field extraction.'}
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="px-5 py-3">Document Title & File</th>
-                <th className="px-4 py-3">Record Type</th>
-                <th className="px-4 py-3">Language & Script</th>
-                <th className="px-4 py-3">Parcel / Jurisdiction</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Uploaded</th>
-                <th className="px-5 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-              {documents.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  {/* Document Title & File */}
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div className="truncate max-w-xs sm:max-w-sm">
-                        <div
-                          onClick={() => onPreview(doc)}
-                          className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer truncate"
-                        >
-                          {doc.title}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {doc.original_filename} • {formatFileSize(doc.file_size)}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documents.map((doc) => {
+            const hasExtracted = doc.extracted_data && (doc.extracted_data.owners?.length || doc.extracted_data.survey_number);
+            const isDeleting = deletingId === doc.id;
+            const isProcessing = processingId === doc.id || doc.status === 'PROCESSING';
 
-                  {/* Record Type */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 capitalize">
-                      {doc.document_type.replace(/_/g, ' ')}
+            return (
+              <Card
+                key={doc.id}
+                className="group border border-border/80 hover:border-foreground/30 transition-all hover:shadow-xs flex flex-col justify-between overflow-hidden bg-card"
+              >
+                <CardContent className="p-5 space-y-4">
+                  {/* Top Bar: Type + Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-muted-foreground">
+                      {formatDocType(doc.document_type)}
                     </span>
-                  </td>
+                    {getStatusBadge(doc.status)}
+                  </div>
 
-                  {/* Language & Script */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    {doc.detected_language ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                          {doc.detected_script || doc.detected_language.toUpperCase()}
-                        </span>
-                        {doc.ocr_confidence && (
-                          <span className="text-[11px] text-slate-500">
-                            {Math.round(doc.ocr_confidence)}%
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">Not analyzed</span>
-                    )}
-                  </td>
-
-                  {/* Parcel / Jurisdiction */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="text-xs">
-                      {doc.parcel_identifier && (
-                        <div className="font-medium text-slate-800 dark:text-slate-200">
-                          {doc.parcel_identifier}
-                        </div>
-                      )}
-                      <div className="text-slate-500 dark:text-slate-400">
-                        {[doc.district, doc.state].filter(Boolean).join(', ') || '—'}
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        doc.status === 'DIGITIZED'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                          : doc.status === 'PROCESSING'
-                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
-                          : doc.status === 'FAILED'
-                          ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
-                          : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
-                      }`}
+                  {/* Title & Metadata */}
+                  <div className="space-y-1">
+                    <h4
+                      onClick={() => onPreview(doc)}
+                      className="font-semibold text-sm text-foreground hover:text-primary transition line-clamp-1 cursor-pointer"
+                      title={doc.title}
                     >
-                      {doc.status === 'DIGITIZED' && <CheckCircle2 className="w-3 h-3" />}
-                      {doc.status === 'PROCESSING' && <RefreshCw className="w-3 h-3 animate-spin" />}
-                      {doc.status}
-                    </span>
-                  </td>
+                      {doc.title}
+                    </h4>
+                    <p className="text-xs text-muted-foreground line-clamp-1 font-mono text-[11px]">
+                      {doc.original_filename}
+                    </p>
+                  </div>
 
-                  {/* Date Uploaded */}
-                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
-                    {new Date(doc.created_at).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </td>
+                  {/* Key Land Identifiers */}
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/60">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-mono block">Parcel / Survey</span>
+                      <span className="font-medium text-foreground text-xs truncate block">
+                        {doc.parcel_identifier || doc.extracted_data?.survey_number?.value || '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-mono block">District / State</span>
+                      <span className="font-medium text-foreground text-xs truncate block">
+                        {doc.district ? `${doc.district}${doc.state ? `, ${doc.state}` : ''}` : '—'}
+                      </span>
+                    </div>
+                  </div>
 
-                  {/* Actions */}
-                  <td className="px-5 py-3.5 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {doc.status !== 'DIGITIZED' && (
-                        <button
-                          onClick={() => handleProcess(doc)}
-                          disabled={processingId === doc.id || doc.status === 'PROCESSING'}
-                          className="p-1.5 text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition"
-                          title="Run OCR / Preprocessing Pipeline"
-                        >
-                          <Sparkles className={`w-4 h-4 ${processingId === doc.id ? 'animate-spin' : ''}`} />
-                        </button>
+                  {/* Extracted Certificate Summary (if available) */}
+                  {hasExtracted && (
+                    <div className="p-2.5 rounded-lg bg-muted/50 border border-border/60 text-xs space-y-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-muted-foreground flex items-center gap-1 font-medium">
+                          <ShieldCheck className="w-3.5 h-3.5 text-foreground" />
+                          Extracted Owners ({doc.extracted_data?.owners?.length || 0})
+                        </span>
+                        {doc.extracted_data?.overall_confidence ? (
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {doc.extracted_data.overall_confidence}% conf.
+                          </span>
+                        ) : null}
+                      </div>
+                      {doc.extracted_data?.owners && doc.extracted_data.owners.length > 0 && (
+                        <p className="font-medium text-foreground text-xs truncate">
+                          {doc.extracted_data.owners.map((o) => o.name).join(', ')}
+                        </p>
                       )}
+                    </div>
+                  )}
 
-                      <button
-                        onClick={() => onPreview(doc)}
-                        className="p-1.5 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition"
-                        title="Preview Document & OCR"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                  {/* Date & Size info */}
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono pt-1">
+                    <span>{(doc.file_size / (1024 * 1024)).toFixed(2)} MB</span>
+                    <span>{new Date(doc.created_at).toLocaleDateString()}</span>
+                  </div>
+                </CardContent>
 
+                {/* Footer action buttons */}
+                <div className="px-5 py-3 bg-muted/30 border-t border-border/60 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2.5 text-xs"
+                      onClick={() => onPreview(doc)}
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1" />
+                      Inspect
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      asChild
+                    >
                       <a
                         href={getDocumentFileUrl(doc.id, true)}
                         download={doc.original_filename}
-                        className="p-1.5 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition"
                         title="Download Original File"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5 text-muted-foreground" />
                       </a>
+                    </Button>
+                  </div>
 
-                      <button
-                        onClick={() => handleDelete(doc)}
-                        disabled={deletingId === doc.id}
-                        className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition disabled:opacity-50"
-                        title="Delete Document"
+                  <div className="flex items-center gap-1">
+                    {doc.status !== 'DIGITIZED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs text-foreground"
+                        onClick={() => handleProcess(doc)}
+                        disabled={isProcessing}
+                        title="Run Multilingual OCR + Field Extractor"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        {isProcessing ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 mr-1 text-foreground" />
+                            Run Pipeline
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDelete(doc)}
+                      disabled={isDeleting}
+                      title="Delete record"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
