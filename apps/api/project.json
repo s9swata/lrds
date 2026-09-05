@@ -3,12 +3,26 @@
     "sourceRoot": "apps/api/src",
     "projectType": "application",
     "targets": {
-      "serve": {
-        "executor": "nx:run-commands",
-        "options": {
-          "command": "uv run uvicorn src.main:app --reload --port 8000",
-          "cwd": "apps/api"
-        }
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "uv run uvicorn src.main:app --reload --port 8000",
+        "cwd": "apps/api"
+      }
+    },
+    "db:push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "uv run python -m src.database.manage push",
+        "cwd": "apps/api"
+      }
+    },
+    "db:drop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "uv run python -m src.database.manage drop",
+        "cwd": "apps/api"
       }
     }
   }
+}
